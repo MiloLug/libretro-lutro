@@ -18,6 +18,7 @@
 \*=========================================================================*/
 #ifdef _WIN32
 #include "wsocket.h"
+#include "Ws2ipdef.h"
 #else
 #include "usocket.h"
 #endif
