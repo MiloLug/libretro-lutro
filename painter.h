@@ -49,6 +49,9 @@ typedef struct
    /* scale */
    float sx;
    float sy;
+   /* pivot */
+   float ox;
+   float oy;
 } painter_transform_t;
 
 typedef struct painter_s painter_t;
@@ -90,6 +93,7 @@ void pntr_destroy_bmp(bitmap_t * bmp);
 bool pntr_push(painter_t *p);
 bool pntr_pop(painter_t *p);
 void pntr_origin(painter_t *p, bool reset_stack);
+void pntr_set_pivot(painter_t *p, float x, float y);
 void pntr_scale(painter_t *p, float x, float y);
 void pntr_rotate(painter_t *p, float rad);
 void pntr_translate(painter_t *p, int x, int y);

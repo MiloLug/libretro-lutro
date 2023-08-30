@@ -35,9 +35,9 @@ extern "C" {
 
 	*/
 
-	bitmap_t * transform_rotozoom(const bitmap_t * src, double angle, double zoom, int smooth);
+	bitmap_t * transform_rotozoom(const bitmap_t * src, double angle, double zoom, bool smooth);
 
-	bitmap_t * transform_rotozoom_xy(const bitmap_t * src, double angle, double zoomx, double zoomy, int smooth);
+	bitmap_t * transform_rotozoom_xy(const bitmap_t * src, double angle, double zoomx, double zoomy, bool smooth);
 
 
 	void get_rotozoom_size(int width, int height, double angle, double zoom, int *dstwidth, int * dstheight);
@@ -58,7 +58,7 @@ extern "C" {
 
 	*/
 
-	bitmap_t * transform_zoom(bitmap_t * src, double zoomx, double zoomy, int smooth);
+	bitmap_t * transform_zoom(bitmap_t * src, double zoomx, double zoomy, bool smooth);
 
 	void get_zoom_size(int width, int height, double zoomx, double zoomy, int *dstwidth, int *dstheight);
 

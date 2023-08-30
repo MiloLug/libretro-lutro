@@ -967,8 +967,8 @@ static int gfx_draw(lua_State *L)
 #endif
 
    rect_t drect = {
-      x - ox * sx,
-      y - oy * sy,
+      x,
+      y,
       (int)data->width,
       (int)data->height
    };
@@ -983,7 +983,7 @@ static int gfx_draw(lua_State *L)
    pntr_push(canvas);
    pntr_rotate(canvas, r);
    pntr_scale(canvas, sx, sy);
-   pntr_rotate(canvas, r);
+   pntr_set_pivot(canvas, ox, oy);
 
    if (quad != NULL)
    {

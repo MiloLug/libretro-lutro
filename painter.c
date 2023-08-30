@@ -354,124 +354,51 @@ void pntr_draw(painter_t *p, const bitmap_t *bmp, const rect_t *src_rect, const 
    rect_t srect = *src_rect, drect = *dst_rect;
    bool use_destroy = false;
 
-   if (p->trans->r != 0.) {
+   if (p->trans->r != 0. || p->trans->sx != 1. || p->trans->sy != 1.) {
       use_destroy = true;
-      tmp_bmp = transform_rotozoom(bmp, p->trans->r, 1, true);
+      if (p->trans->r != 0.) {
+         if (p->trans->sx != p->trans->sy) {
+            bmp = transform_zoom(bmp, p->trans->sx, p->trans->sy, true);
+            tmp_bmp = transform_rotozoom(bmp, p->trans->r, 1, true);
+            pntr_destroy_bmp(bmp);
+         } else {
+            tmp_bmp = transform_rotozoom(bmp, p->trans->r, p->trans->sx, true);
+         }
+      } else {
+         tmp_bmp = transform_zoom(bmp, p->trans->sx, p->trans->sy, true);
+      }
+
       if (!tmp_bmp)
          return;
+      
       srect.width = tmp_bmp->width;
       srect.height = tmp_bmp->height;
    }
 
    drect.x += p->trans->tx;
-   drect.y -= p->trans->ty;
+   drect.y += p->trans->ty;
 
-#ifdef HAVE_TRANSFORM
-   // stored as 0 or 0xffffffff for masking properties.
-   const uint32_t is_x_reversed = (p->trans->sx < 0) ? 0xffffffff : 0;
-   const uint32_t is_y_reversed = (p->trans->sy < 0) ? 0xffffffff : 0;
-
-   float abs_sx = is_x_reversed ? -p->trans->sx : p->trans->sx;
-   float abs_sy = is_y_reversed ? -p->trans->sy : p->trans->sy;
-
-   drect.width  = srect.width * abs_sx;
-   drect.height = srect.height * abs_sy;
-
-   const uint32_t k_binexp = 16;
-   const uint32_t k_binexp_center = (1 << (k_binexp - 1));
-
-   // give up if scaling is small enough that division becomes untenable
-   if (abs_sx < 1.0/k_binexp_center || abs_sy < 1.0/k_binexp_center)
-      return;
-   
-   const uint32_t inv_scale_x = (1 << k_binexp) / abs_sx;
-   const uint32_t inv_scale_y = (1 << k_binexp) / abs_sy;
-
-   #define SCALE_DST_TO_SRC(axis, a) (((a) * inv_scale_##axis + k_binexp_center) >> k_binexp)
-
-   // negative scaling reverses the top-left and bottom-right corners like so:
-   if (is_x_reversed)
-   {
-      drect.x -= drect.width;
-   }
-   if (is_y_reversed)
-   {
-      drect.y -= drect.height;
-   }
-#else
-   drect.width  = srect.width;
+   /* scaling not supported */
+   drect.width = srect.width;
    drect.height = srect.height;
 
-   #define SCALE_DST_TO_SRC(axis, a) (a)
-   #define is_x_reversed 0
-   #define is_y_reversed 0
-#endif
-
-   // crop source rect to destination
    if (drect.x < 0)
    {
-      srect.width += SCALE_DST_TO_SRC(x, drect.x);
-      if (!is_x_reversed)
-      {
-         // (crop from left side of source)
-         srect.x  += SCALE_DST_TO_SRC(x, -drect.x);
-      }
-      drect.width += drect.x;
-      drect.x      = 0;
+      srect.x += -drect.x;
+      srect.width += drect.x;
    }
 
    if (drect.y < 0)
    {
-      srect.height += SCALE_DST_TO_SRC(y, drect.y);
-      if (!is_y_reversed)
-      {
-         // (crop from top of source)
-         srect.y   += SCALE_DST_TO_SRC(y, -drect.y);
-      }
-      drect.height += drect.y;
-      drect.y       = 0;
+      srect.y += -drect.y;
+      srect.height += drect.y;
    }
 
-   rect_t drect_clipped = rect_intersect(&drect, &p->clip);
+   drect = rect_intersect(&drect, &p->clip);
+   drect.width = MIN(drect.width, srect.width);
+   drect.height = MIN(drect.height, srect.height);
 
-   // (note: this can never be negative, so srect.x, srect.y remain positive)
-   srect.x      += SCALE_DST_TO_SRC(x, drect_clipped.x      - drect.x);
-   srect.width  -= SCALE_DST_TO_SRC(x, drect.width - drect_clipped.width);
-   srect.y      += SCALE_DST_TO_SRC(y, drect_clipped.y      - drect.y);
-   srect.height -= SCALE_DST_TO_SRC(y, drect.height - drect_clipped.height);
-
-   drect = drect_clipped;
-
-   // ensure source rect is cropped to source bounds
-   if (srect.x + srect.width > bmp->width)
-   {
-      srect.width = bmp->width - srect.x;
-   }
-   if (srect.y + srect.height > bmp->height)
-   {
-      srect.height = bmp->height - srect.y;
-   }
-
-   // ensure we won't exceed the bitmap's data during the upcoming blit:
-   #ifdef HAVE_TRANSFORM
-      // temporary implementation
-      // TODO: replace this.
-      if (srect.x >= bmp->width || srect.y >= bmp->height)
-         return;
-      while (srect.x + SCALE_DST_TO_SRC(x, drect.width) > bmp->width)
-      {
-         drect.width--;
-      }
-      while (srect.y + SCALE_DST_TO_SRC(y, drect.height) > bmp->height)
-      {
-         drect.height--;
-      }
-   #else
-      drect.width = MIN(drect.width, srect.width);
-      drect.height = MIN(drect.height, srect.height); 
-   #endif
-  
-   if (rect_is_null(&drect) || rect_is_null(&srect) || p->trans->sx == 0 || p->trans->sy == 0) {
+   if (rect_is_null(&drect) || rect_is_null(&srect)) {
       if (use_destroy)
          pntr_destroy_bmp(tmp_bmp);
       return;
@@ -487,49 +414,41 @@ void pntr_draw(painter_t *p, const bitmap_t *bmp, const rect_t *src_rect, const 
    int cols = drect.width;
    int x = 0;
 
-#ifdef HAVE_TRANSFORM
-   uint32_t y = 0;
-#endif
 #ifdef HAVE_COMPOSITION
    uint32_t sa, sr, sg, sb, da, dr, dg, db, s, d;
-#else
-   uint32_t s;
-#endif
    while (rows_left--)
    {
       for (x = 0; x < cols; ++x)
       {
-#ifdef HAVE_TRANSFORM
-         uint32_t xo = (x & ~is_x_reversed) | ((cols - x - 1) & is_x_reversed);
-         uint32_t yo = (y & ~is_y_reversed) | ((drect.height - y - 1) & is_y_reversed);
-         uint32_t xi = SCALE_DST_TO_SRC(x, xo);
-         uint32_t yi = SCALE_DST_TO_SRC(y, yo);
-         s = src[xi + yi * src_skip];
-#else
          s = src[x];
-#endif
-#ifdef HAVE_COMPOSITION
          d = dst[x];
          sa = s >> 24;
          da = d >> 24;
          DISASSEMBLE_RGB(s, sr, sg, sb);
          DISASSEMBLE_RGB(d, dr, dg, db);
          dst[x] = ((sa + da * (255 - sa)) << 24) | (COMPOSE_FAST(sr, dr, sa) << 16) | (COMPOSE_FAST(sg, dg, sa) << 8) | (COMPOSE_FAST(sb, db, sa));
-#else
-         if (s & 0xff000000)
-         dst[x] = s;
-#endif
       }
 
       dst += dst_skip;
-#ifdef HAVE_TRANSFORM
-      y += 1;
-#else
       src += src_skip;
-#endif
    }
-   
-  if (use_destroy)
+#else
+   uint32_t c;
+   while (rows_left--)
+   {
+      for (x = 0; x < cols; ++x)
+      {
+         c = src[x];
+         if (c & 0xff000000)
+            dst[x] = c;
+      }
+
+      dst += dst_skip;
+      src += src_skip;
+   }
+#endif
+
+   if (use_destroy)
       pntr_destroy_bmp(tmp_bmp);
 }
 
@@ -692,6 +611,12 @@ void pntr_origin(painter_t *p, bool reset_stack)
    pntr_scale(p, 1, 1);
    pntr_rotate(p, 0);
    pntr_translate(p, 0, 0);
+   pntr_set_pivot(p, 0, 0);
+}
+
+void pntr_set_pivot(painter_t *p, float x, float y) {
+   p->trans->ox = x;
+   p->trans->oy = y;
 }
 
 void pntr_scale(painter_t *p, float x, float y)
