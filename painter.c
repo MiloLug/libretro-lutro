@@ -11,6 +11,7 @@
 #include "painter.h"
 #include "image.h"
 #include "lutro_stb_image.h"
+#include "rotozoom.h"
 
 #include "encodings/utf.h"
 
@@ -330,7 +331,18 @@ void pntr_draw(painter_t *p, const bitmap_t *bmp, const rect_t *src_rect, const 
    if (!p->target->data)
       return;
 
+   bitmap_t * tmp_bmp = bmp;
    rect_t srect = *src_rect, drect = *dst_rect;
+   bool use_destroy = false;
+
+   if (p->trans->r != 0.) {
+      use_destroy = true;
+      tmp_bmp = transform_rotozoom(bmp, p->trans->r, 1, true);
+      if (!tmp_bmp)
+         return;
+      srect.width = tmp_bmp->width;
+      srect.height = tmp_bmp->height;
+   }
 
    drect.x += p->trans->tx;
    drect.y += p->trans->ty;
@@ -355,14 +367,17 @@ void pntr_draw(painter_t *p, const bitmap_t *bmp, const rect_t *src_rect, const 
    drect.width  = MIN(drect.width, srect.width);
    drect.height = MIN(drect.height, srect.height);
 
-   if (rect_is_null(&drect) || rect_is_null(&srect))
+   if (rect_is_null(&drect) || rect_is_null(&srect)) {
+      if (use_destroy)
+         pntr_destroy_bmp(tmp_bmp);
       return;
+   }
 
    size_t dst_skip = p->target->pitch >> 2;
-   size_t src_skip = bmp->pitch >> 2;
+   size_t src_skip = tmp_bmp->pitch >> 2;
 
    uint32_t *dst = p->target->data + dst_skip * drect.y + drect.x;
-   uint32_t *src = bmp->data + src_skip * srect.y + srect.x;
+   uint32_t *src = tmp_bmp->data + src_skip * srect.y + srect.x;
 
    int rows_left = drect.height;
    int cols = drect.width;
@@ -401,6 +416,9 @@ void pntr_draw(painter_t *p, const bitmap_t *bmp, const rect_t *src_rect, const 
       src += src_skip;
    }
 #endif
+
+   if (use_destroy)
+      pntr_destroy_bmp(tmp_bmp);
 }
 
 
@@ -620,6 +638,20 @@ font_t *font_load_filename(const char *filename, const char *characters, unsigne
    utf8_conv_utf32(font->characters, MAX_FONT_CHAR, characters, strlen(characters));
 
    return font;
+}
+
+bitmap_t * pntr_new_bmp(int width, int height) {
+   bitmap_t * bmp = (bitmap_t*)lutro_calloc(1, sizeof(bitmap_t));
+   bmp->pitch = width * sizeof(uint32_t);
+   bmp->data = (uint32_t*)lutro_calloc(1, bmp->pitch * height);
+   bmp->width = width;
+   bmp->height = height;
+   return bmp;
+}
+
+void pntr_destroy_bmp(bitmap_t * bmp) {
+   lutro_free(bmp->data);
+   lutro_free(bmp);
 }
 
 font_t *font_load_bitmap(const bitmap_t *atlas, const char *characters, unsigned flags)

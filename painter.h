@@ -83,6 +83,8 @@ void pntr_draw(painter_t *p, const bitmap_t *bmp, const rect_t *src_rect, const 
 void pntr_print(painter_t *p, int x, int y, const char *text, int limit);
 int  pntr_text_width(painter_t *p, const char *text);
 void pntr_printf(painter_t *p, int x, int y, const char *format, ...);
+bitmap_t * pntr_new_bmp(int width, int height);
+void pntr_destroy_bmp(bitmap_t * bmp);
 
 /* Transformations */
 bool pntr_push(painter_t *p);

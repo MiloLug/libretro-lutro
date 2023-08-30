@@ -908,6 +908,7 @@ void *checkudata (lua_State *L, int ud, const char *tname) {
 
 #define OPTNUMBER(L, ndx, def) (lua_isnumber(L, ndx) ? lua_tonumber(L, ndx) : def)
 
+// drawable: love.Drawable, x?: number, y?: number, r?: number, sx?: number, sy?: number, ox?: number, oy?: number, kx?: number, ky?: number
 static int gfx_draw(lua_State *L)
 {
    int n = lua_gettop(L);
