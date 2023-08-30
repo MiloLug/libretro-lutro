@@ -1,4 +1,4 @@
-# Lutro [![Build Status](https://travis-ci.org/libretro/libretro-lutro.svg?branch=master)](https://travis-ci.org/libretro/libretro-lutro)
+# Lutro
 
 Experimental [Lua](http://lua.org) game framework for [libretro](http://libretro.com), following the [LÖVE](http://love2d.org) API.
 
@@ -36,7 +36,7 @@ Compile Lutro by [installing the RetroArch dependencies](https://github.com/libr
 There are a few optional defines you can use to change how Lutro behaves.
 
 - `make HAVE_COMPOSITION=1` Enables alpha-blending.
-
+- `make HAVE_TRANSFORM=1` Enables scaling
 
 ## Test
 
