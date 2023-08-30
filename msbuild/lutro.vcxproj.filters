@@ -20,6 +20,7 @@
     <ClCompile Include=".././mouse.c" />
     <ClCompile Include=".././lutro_window.c" />
     <ClCompile Include=".././painter.c" />
+    <ClCompile Include=".././rotozoom.c" />
     <ClCompile Include=".././libretro-common/file/file_path.c" />
     <ClCompile Include=".././libretro-common/features/features_cpu.c" />
     <ClCompile Include=".././libretro-common/audio/conversion/float_to_s16.c" />
@@ -337,6 +338,7 @@
     <ClInclude Include=".././msbuild/fi-printf-redirect.h" />
     <ClInclude Include=".././msbuild/fi-verify-printf-msvc.h" />
     <ClInclude Include=".././painter.h" />
+    <ClInclude Include=".././rotozoom.h" />
     <ClInclude Include=".././runtime.h" />
     <ClInclude Include=".././sound.h" />
     <ClInclude Include=".././system.h" />

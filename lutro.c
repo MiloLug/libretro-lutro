@@ -874,11 +874,12 @@ void *lutro_malloc_internal(size_t size, const char* debug, int line)
 void lutro_free_internal(void *ptr, const char* debug, int line)
 {
 #if TRACE_ALLOCATION
-    // Don't trace nop
-    if (ptr) {
-        fprintf(stderr,"TRACE ALLOC:%p:free:%s:%d\n", ptr, debug, line);
-        allocation_count--;
-    }
+   if (ptr) {
+      fprintf(stderr,"TRACE ALLOC:%p:free: %s:%d\n", ptr, debug, line);
+      allocation_count--;
+   } else {
+      fprintf(stderr,"TRACE ALLOC:null:free: %s:%d\n", ptr, debug, line);
+   }
 #endif
     free(ptr);
 }
@@ -888,10 +889,10 @@ void *lutro_calloc_internal(size_t nmemb, size_t size, const char* debug, int li
     void *a = calloc(nmemb, size);
 #if TRACE_ALLOCATION
     if (a) {
-        fprintf(stderr,"TRACE ALLOC:%p:calloc:%s:%d\n", a, debug, line);
+        fprintf(stderr,"TRACE ALLOC:%p:calloc: %s:%d\n", a, debug, line);
         allocation_count++;
     } else {
-        fprintf(stderr,"TRACE ALLOC:failure:calloc:%s:%d\n", debug, line);
+        fprintf(stderr,"TRACE ALLOC:failure:calloc: %s:%d\n", debug, line);
     }
 #endif
     return a;

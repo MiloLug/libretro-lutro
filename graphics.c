@@ -908,6 +908,7 @@ void *checkudata (lua_State *L, int ud, const char *tname) {
 
 #define OPTNUMBER(L, ndx, def) (lua_isnumber(L, ndx) ? lua_tonumber(L, ndx) : def)
 
+// drawable: love.Drawable, x?: number, y?: number, r?: number, sx?: number, sy?: number, ox?: number, oy?: number, kx?: number, ky?: number
 static int gfx_draw(lua_State *L)
 {
    int n = lua_gettop(L);
@@ -966,8 +967,8 @@ static int gfx_draw(lua_State *L)
 #endif
 
    rect_t drect = {
-      x - ox * sx,
-      y - oy * sy,
+      x,
+      y,
       (int)data->width,
       (int)data->height
    };
@@ -982,7 +983,7 @@ static int gfx_draw(lua_State *L)
    pntr_push(canvas);
    pntr_rotate(canvas, r);
    pntr_scale(canvas, sx, sy);
-   pntr_rotate(canvas, r);
+   pntr_set_pivot(canvas, ox, oy);
 
    if (quad != NULL)
    {
